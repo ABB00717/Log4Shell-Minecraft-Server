@@ -38,6 +38,9 @@ copy "%~dp0server.jar" C:\minecraft\server.jar
 echo Accepting EULA...
 echo eula=true>C:\minecraft\eula.txt
 
+echo Disabling online mode verification...
+echo online-mode=false>C:\minecraft\server.properties
+
 echo Creating startup script...
 (
 echo @echo off
