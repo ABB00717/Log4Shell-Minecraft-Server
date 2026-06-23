@@ -31,8 +31,10 @@ QEMU_CMD=(
     -machine type=q35,accel=kvm
     -vga qxl
     -device ich9-intel-hda -device hda-duplex
-    -drive file="$DISK_IMAGE",format=qcow2,if=sata,index=0,media=disk
-    -drive file="$WIN_ISO",media=cdrom,index=1
+    -drive file="$DISK_IMAGE",format=qcow2,if=none,id=drive-hd0
+    -device ide-hd,bus=ide.0,drive=drive-hd0,id=hd0
+    -drive file="$WIN_ISO",media=cdrom,if=none,id=drive-cd0
+    -device ide-cd,bus=ide.1,drive=drive-cd0,id=cd0
     -netdev user,id=net0,restrict=on,hostfwd=tcp::25565-:25565,hostfwd=udp::25565-:25565
     -device e1000,netdev=net0
     -boot menu=on
@@ -41,7 +43,10 @@ QEMU_CMD=(
 # Append installer ISO if present
 if [ -f "$INSTALLER_ISO" ]; then
     echo "Mounting installer ISO: $INSTALLER_ISO"
-    QEMU_CMD+=(-drive file="$INSTALLER_ISO",media=cdrom,index=2)
+    QEMU_CMD+=(
+        -drive file="$INSTALLER_ISO",media=cdrom,if=none,id=drive-cd1
+        -device ide-cd,bus=ide.2,drive=drive-cd1,id=cd1
+    )
 else
     echo "Warning: $INSTALLER_ISO not found. Minecraft installer will not be mounted."
 fi
