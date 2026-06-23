@@ -1,0 +1,6 @@
+# Ignore VM and ISO files
+*.iso
+*.qcow2
+
+# Ignore downloaded binaries
+/downloads/
