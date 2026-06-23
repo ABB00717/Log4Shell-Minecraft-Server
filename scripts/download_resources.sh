@@ -5,12 +5,12 @@ set -e
 # Create downloads directory
 mkdir -p downloads
 
-# Download OpenJDK 21 ZIP for Windows x64
-echo "Downloading OpenJDK 21..."
-curl -L -o downloads/openjdk.zip "https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jdk/hotspot/normal/eclipse"
+# Download Zulu OpenJDK 8u181 ZIP for Windows x64
+echo "Downloading Zulu JDK 8u181..."
+curl -L -o downloads/openjdk.zip "https://cdn.azul.com/zulu/bin/zulu8.31.0.1-jdk8.0.181-win_x64.zip"
 
-# Download Minecraft server JAR
-echo "Downloading Minecraft server..."
-curl -L -o downloads/server.jar "https://piston-data.mojang.com/v1/objects/823e2250d24b3ddac457a60c92a6a941943fcd6a/server.jar"
+# Download Minecraft 1.16.5 server JAR
+echo "Downloading Minecraft 1.16.5 server..."
+curl -L -o downloads/server.jar "https://piston-data.mojang.com/v1/objects/1b557e7b033b583cd9f66746b7a9ab1ec1673ced/server.jar"
 
 echo "Downloads completed successfully."
