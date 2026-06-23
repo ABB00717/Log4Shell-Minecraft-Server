@@ -41,6 +41,9 @@ echo eula=true>C:\minecraft\eula.txt
 echo Disabling online mode verification...
 echo online-mode=false>C:\minecraft\server.properties
 
+echo Adding Windows Firewall exception for port 25565...
+netsh advfirewall firewall add rule name="Minecraft Server" dir=in action=allow protocol=TCP localport=25565
+
 echo Creating startup script...
 (
 echo @echo off
