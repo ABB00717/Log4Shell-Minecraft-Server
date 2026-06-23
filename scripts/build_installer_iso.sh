@@ -41,7 +41,7 @@ echo eula=true > C:\minecraft\eula.txt
 echo Creating startup script...
 (
 echo @echo off
-echo C:\minecraft\java\bin\java.exe -Xmx4G -Xms4G -jar C:\minecraft\server.jar nogui
+echo C:\minecraft\java\bin\java.exe -Xmx8G -Xms8G -jar C:\minecraft\server.jar nogui
 ) > C:\minecraft\run_server.bat
 
 echo Setup finished.
