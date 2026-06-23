@@ -6,8 +6,8 @@ DISK_IMAGE="win10.qcow2"
 DISK_SIZE="40G"
 WIN_ISO="Windows 10 Build 14393.iso"
 INSTALLER_ISO="minecraft_installer.iso"
-MEM="6G"
-CPUS="4"
+MEM="12G"
+CPUS="8"
 
 # Check if Windows ISO exists
 if [ ! -f "$WIN_ISO" ]; then
