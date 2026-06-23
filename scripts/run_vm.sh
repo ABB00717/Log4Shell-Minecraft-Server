@@ -38,6 +38,9 @@ QEMU_CMD=(
     -device ide-cd,bus=ide.1,drive=drive-cd0,id=cd0
     -netdev user,id=net0,hostfwd=tcp::25565-:25565,hostfwd=udp::25565-:25565
     -device e1000,netdev=net0
+    -device virtio-serial-pci
+    -device virtserialport,chardev=vdagent0,name=com.redhat.spice.0
+    -chardev qemu-vdagent,id=vdagent0,name=vdagent,clipboard=on
     -boot menu=on
 )
 
