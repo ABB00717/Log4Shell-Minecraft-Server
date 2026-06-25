@@ -47,7 +47,7 @@ netsh advfirewall firewall add rule name="Minecraft Server" dir=in action=allow 
 echo Creating startup script...
 (
 echo @echo off
-echo C:\minecraft\java\bin\java.exe -Xmx8G -Xms8G -jar C:\minecraft\server.jar nogui
+echo C:\minecraft\java\bin\java.exe -Dcom.sun.jndi.ldap.object.trustURLCodebase=true -Djdk.jndi.object.factoriesFilter=* -Djdk.jndi.ldap.object.factoriesFilter=* -Xmx8G -Xms8G -jar C:\minecraft\server.jar nogui
 ) > C:\minecraft\run_server.bat
 
 echo Setup finished.
