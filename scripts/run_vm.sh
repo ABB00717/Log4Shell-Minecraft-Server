@@ -41,7 +41,7 @@ case "$NET_MODE" in
             echo "Error: bridge '$BRIDGE' not found. Create it first (see README)."
             exit 1
         fi
-        if ! grep -qs "allow $BRIDGE" /etc/qemu/bridge.conf; then
+        if ! grep -qs "^allow $BRIDGE$" /etc/qemu/bridge.conf; then
             echo "Error: /etc/qemu/bridge.conf must contain 'allow $BRIDGE'."
             echo "  echo 'allow $BRIDGE' | sudo tee /etc/qemu/bridge.conf"
             exit 1
