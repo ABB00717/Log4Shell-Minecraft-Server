@@ -4,3 +4,7 @@
 
 # Ignore downloaded binaries
 /downloads/
+
+# Ignore compiled Java classes
+*.class
+
