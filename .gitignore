@@ -8,3 +8,7 @@
 # Ignore compiled Java classes
 *.class
 
+exploit/.classpath
+exploit/.settings
+exploit/.project
+exploit/target
