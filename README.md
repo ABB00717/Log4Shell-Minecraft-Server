@@ -75,7 +75,43 @@ Then you will see a calculator pop up!
 
 ![Calculator!](./docs/calculator.png)
 
----
+## Windows + VMware Workstation setup (alternative to QEMU)
+
+Use this path instead of the QEMU one above if your host is Windows and you'd rather run the guest in VMware Workstation. It reuses the same `downloads/` and `Windows 10 Build 14393.iso`, but the ISO-staging step and VM itself work differently.
+
+### Install Windows in a new VM
+
+Create a VM in VMware Workstation and attach `Windows 10 Build 14393.iso` as the install media. Install Windows normally.
+
+### Put the VM on a host-only network
+
+In VM Settings -> Network Adapter, select **Host-only**. This uses VMware's `VMnet1` virtual network, which lets the host and guest talk to each other but gives the guest **no route to the internet** - so Windows Update never fires.
+
+Check in VMware's Virtual Network Editor that `VMnet1` has both "Connect a host virtual adapter" and "Use local DHCP service" enabled (these are the defaults), so the guest gets an IP automatically. Find the host's own IP on that network with:
+
+```powershell
+ipconfig   # look for "VMware Network Adapter VMnet1"
+```
+
+`exploit/Exploit.java`'s callback address is hardcoded to that host IP - update it to match your machine if it differs (default in this repo is `192.168.48.1`).
+
+### Build the installer ISO (Windows-native, no genisoimage)
+
+`genisoimage` isn't available on Windows, so use the PowerShell equivalent instead, which builds the ISO with the built-in IMAPI2FS COM API (no extra tools needed):
+
+```powershell
+powershell -File scripts\build_installer_iso.ps1
+```
+
+This produces `minecraft_installer.iso`, staged the same way as the bash version: Java + the server jar, plus a `setup_server.bat` that installs everything into `C:\minecraft` with the vulnerable JNDI flags.
+
+### Run the installer inside the guest
+
+Attach `minecraft_installer.iso` as the VM's CD/DVD image (Removable Devices -> CD/DVD -> Settings -> Use ISO image file), then inside the guest run `setup_server.bat` from that drive, followed by `C:\minecraft\run_server.bat`.
+
+### Reuse the finished VM
+
+Once set up, the VM itself - not the installer ISO - is the reusable artifact. Export it (File -> Export to OVF) or just copy the VM's folder if you need to hand a ready-to-run environment to someone else, instead of re-running the installer from scratch.
 
 ## Multi-host LAN setup (optional)
 
