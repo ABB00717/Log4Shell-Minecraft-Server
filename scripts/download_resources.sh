@@ -9,6 +9,10 @@ mkdir -p downloads
 echo "Downloading Temurin JDK 17..."
 curl -L -o downloads/openjdk.zip "https://api.adoptium.net/v3/binary/latest/17/ga/windows/x64/jdk/hotspot/normal/eclipse"
 
+# Download Minecraft 1.18 server JAR
+echo "Downloading Minecraft 1.18 server..."
+curl -L -o downloads/mojang_1.18.jar "https://piston-data.mojang.com/v1/objects/3cf24a8694aca6267883b17d934efacc5e44440d/server.jar"
+
 # Download Paper 1.18 server JAR (build 63, the last build before Paper
 # backported the log4j fix in build 64 - stays exploitable for Log4Shell
 # while adding plugins/ support vanilla server.jar doesn't have)

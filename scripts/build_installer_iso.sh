@@ -4,6 +4,7 @@ set -e
 
 # Verify required files exist
 if [ ! -f downloads/openjdk.zip ] || [ ! -f downloads/server.jar ] \
+    || [ ! -f downloads/mojang_1.18.jar ] \
     || [ ! -f downloads/plugins/BlockReplacer-1.0.0.jar ] || [ ! -f downloads/plugins/Teleport-1.0.0.jar ]; then
     echo "Error: Required downloads not found. Run download_resources.sh first."
     exit 1
@@ -16,6 +17,7 @@ mkdir -p "$STAGING_DIR/plugins"
 # Copy resources to staging
 cp downloads/openjdk.zip "$STAGING_DIR/"
 cp downloads/server.jar "$STAGING_DIR/"
+cp downloads/mojang_1.18.jar "$STAGING_DIR/"
 cp downloads/plugins/*.jar "$STAGING_DIR/plugins/"
 
 # Create the Windows setup batch file
@@ -36,6 +38,10 @@ rd /s /q C:\minecraft\java_temp
 
 echo Copying server files...
 copy "%~dp0server.jar" C:\minecraft\server.jar
+
+echo Pre-seeding Paperclip cache so it doesn't need internet access on first run...
+mkdir C:\minecraft\cache
+copy "%~dp0mojang_1.18.jar" C:\minecraft\cache\mojang_1.18.jar
 
 echo Copying plugins...
 mkdir C:\minecraft\plugins
