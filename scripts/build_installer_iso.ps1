@@ -13,7 +13,8 @@ Push-Location $RepoRoot
 
 try {
     # Verify required files exist
-    if (-not (Test-Path "downloads\openjdk.zip") -or -not (Test-Path "downloads\server.jar")) {
+    if (-not (Test-Path "downloads\openjdk.zip") -or -not (Test-Path "downloads\server.jar") `
+        -or -not (Test-Path "downloads\plugins\BlockReplacer-1.0.0.jar") -or -not (Test-Path "downloads\plugins\Teleport-1.0.0.jar")) {
         Write-Error "Required downloads not found. Run download_resources.sh first."
         exit 1
     }
@@ -23,11 +24,12 @@ try {
     if (Test-Path $StagingDir) {
         Remove-Item -Recurse -Force $StagingDir
     }
-    New-Item -ItemType Directory -Path $StagingDir | Out-Null
+    New-Item -ItemType Directory -Path "$StagingDir\plugins" -Force | Out-Null
 
     # Copy resources to staging
     Copy-Item "downloads\openjdk.zip" "$StagingDir\" -Force
     Copy-Item "downloads\server.jar" "$StagingDir\" -Force
+    Copy-Item "downloads\plugins\*.jar" "$StagingDir\plugins\" -Force
 
     # Create the Windows setup batch file
     $SetupBat = @'
@@ -47,6 +49,10 @@ rd /s /q C:\minecraft\java_temp
 
 echo Copying server files...
 copy "%~dp0server.jar" C:\minecraft\server.jar
+
+echo Copying plugins...
+mkdir C:\minecraft\plugins
+copy "%~dp0plugins\*.jar" C:\minecraft\plugins\
 
 echo Accepting EULA...
 echo eula=true>C:\minecraft\eula.txt

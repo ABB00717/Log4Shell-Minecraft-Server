@@ -1,6 +1,6 @@
 # Log4Shell Minecraft Server Lab
 
-This repository contains a lab environment to reproduce and analyze the Log4Shell (CVE-2021-44228) vulnerability on a Minecraft server running inside a Windows 10 virtual machine.
+This repository contains a lab environment to reproduce and analyze the Log4Shell (CVE-2021-44228) vulnerability on a Minecraft server running inside a Windows 10 virtual machine. The server also ships with the two intentionally-vulnerable [NTUST-CSIE-CAMP-vulnerable-plugins](https://github.com/WuSandWitch/NTUST-CSIE-CAMP-vulnerable-plugins) (`BlockReplacer`, `Teleport`), so the same map can be used to explore both the JVM/log4j-level exploit and Bukkit-plugin-level bugs.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ Ensure you have the following installed on your host system:
 
 ## Directory Structure
 
-- `downloads/` holds downloaded Java and Minecraft server files.
+- `downloads/` holds downloaded Java and Minecraft server files, plus the vulnerable plugin jars under `downloads/plugins/`.
 - `exploit/` contains the marshalsec LDAP reference server and the payload code.
 - `scripts/` contains automation shell scripts to download resources, build ISOs, and run the VM.
 
@@ -24,11 +24,13 @@ This is the main path: everything runs on a **single machine** and reproduces Lo
 
 ### Download Resources
 
-Run the script to fetch the vulnerable Minecraft server and OpenJDK ZIP for Windows:
+Run the script to fetch the OpenJDK ZIP for Windows, the Minecraft server, and the vulnerable plugin jars:
 
 ```bash
 ./scripts/download_resources.sh
 ```
+
+The server jar is **Paper 1.18 build 63** rather than vanilla: vanilla Minecraft has no plugin loader at all (no `plugins/` folder, nothing reads jars dropped next to `server.jar`), and the NTUST plugins require Paper/Spigot. Build 63 is pinned because it's the last Paper 1.18 build before Paper backported the Log4Shell fix, so it still reproduces CVE-2021-44228 while also loading plugins.
 
 ### Build Installer ISO
 
@@ -38,7 +40,7 @@ Run the script to compile the staging files and build the installer ISO:
 ./scripts/build_installer_iso.sh
 ```
 
-This builds `minecraft_installer.iso`, which contains a setup script configured to disable online mode verification and launch the server with vulnerable JNDI codebase lookup properties enabled.
+This builds `minecraft_installer.iso`, which contains a setup script configured to disable online mode verification, stage the two plugin jars into `C:\minecraft\plugins\`, and launch the server with vulnerable JNDI codebase lookup properties enabled.
 
 ### Run Virtual Machine
 
@@ -75,6 +77,10 @@ Then you will see a calculator pop up!
 
 ![Calculator!](./docs/calculator.png)
 
+### Exploiting the vulnerable plugins
+
+`BlockReplacer` and `Teleport` load automatically from `C:\minecraft\plugins\` on server start. For the vulnerable commands and hidden parameters, see the [NTUST-CSIE-CAMP-vulnerable-plugins README](https://github.com/WuSandWitch/NTUST-CSIE-CAMP-vulnerable-plugins) directly rather than duplicating it here.
+
 ## Windows + VMware Workstation setup (alternative to QEMU)
 
 Use this path instead of the QEMU one above if your host is Windows and you'd rather run the guest in VMware Workstation. It reuses the same `downloads/` and `Windows 10 Build 14393.iso`, but the ISO-staging step and VM itself work differently.
@@ -103,7 +109,7 @@ ipconfig   # look for "VMware Network Adapter VMnet1"
 powershell -File scripts\build_installer_iso.ps1
 ```
 
-This produces `minecraft_installer.iso`, staged the same way as the bash version: Java + the server jar, plus a `setup_server.bat` that installs everything into `C:\minecraft` with the vulnerable JNDI flags.
+This produces `minecraft_installer.iso`, staged the same way as the bash version: Java + the server jar + the plugin jars, plus a `setup_server.bat` that installs everything into `C:\minecraft` (including `C:\minecraft\plugins\`) with the vulnerable JNDI flags.
 
 ### Run the installer inside the guest
 

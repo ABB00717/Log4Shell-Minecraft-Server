@@ -3,18 +3,20 @@
 set -e
 
 # Verify required files exist
-if [ ! -f downloads/openjdk.zip ] || [ ! -f downloads/server.jar ]; then
+if [ ! -f downloads/openjdk.zip ] || [ ! -f downloads/server.jar ] \
+    || [ ! -f downloads/plugins/BlockReplacer-1.0.0.jar ] || [ ! -f downloads/plugins/Teleport-1.0.0.jar ]; then
     echo "Error: Required downloads not found. Run download_resources.sh first."
     exit 1
 fi
 
 # Create staging directory
 STAGING_DIR="iso_staging"
-mkdir -p "$STAGING_DIR"
+mkdir -p "$STAGING_DIR/plugins"
 
 # Copy resources to staging
 cp downloads/openjdk.zip "$STAGING_DIR/"
 cp downloads/server.jar "$STAGING_DIR/"
+cp downloads/plugins/*.jar "$STAGING_DIR/plugins/"
 
 # Create the Windows setup batch file
 cat << 'EOF' > "$STAGING_DIR/setup_server.bat"
@@ -34,6 +36,10 @@ rd /s /q C:\minecraft\java_temp
 
 echo Copying server files...
 copy "%~dp0server.jar" C:\minecraft\server.jar
+
+echo Copying plugins...
+mkdir C:\minecraft\plugins
+copy "%~dp0plugins\*.jar" C:\minecraft\plugins\
 
 echo Accepting EULA...
 echo eula=true>C:\minecraft\eula.txt
