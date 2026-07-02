@@ -14,6 +14,7 @@ Push-Location $RepoRoot
 try {
     # Verify required files exist
     if (-not (Test-Path "downloads\openjdk.zip") -or -not (Test-Path "downloads\server.jar") `
+        -or -not (Test-Path "downloads\mojang_1.18.jar") `
         -or -not (Test-Path "downloads\plugins\BlockReplacer-1.0.0.jar") -or -not (Test-Path "downloads\plugins\Teleport-1.0.0.jar")) {
         Write-Error "Required downloads not found. Run download_resources.sh first."
         exit 1
@@ -29,6 +30,7 @@ try {
     # Copy resources to staging
     Copy-Item "downloads\openjdk.zip" "$StagingDir\" -Force
     Copy-Item "downloads\server.jar" "$StagingDir\" -Force
+    Copy-Item "downloads\mojang_1.18.jar" "$StagingDir\" -Force
     Copy-Item "downloads\plugins\*.jar" "$StagingDir\plugins\" -Force
 
     # Create the Windows setup batch file
@@ -49,6 +51,10 @@ rd /s /q C:\minecraft\java_temp
 
 echo Copying server files...
 copy "%~dp0server.jar" C:\minecraft\server.jar
+
+echo Pre-seeding Paperclip cache so it doesn't need internet access on first run...
+mkdir C:\minecraft\cache
+copy "%~dp0mojang_1.18.jar" C:\minecraft\cache\mojang_1.18.jar
 
 echo Copying plugins...
 mkdir C:\minecraft\plugins
@@ -84,7 +90,9 @@ pause
         )
 
         if (!('ISOFile' -as [type])) {
-            Add-Type -CompilerParameters (New-Object System.CodeDom.Compiler.CompilerParameters -Property @{ CompilerOptions = '/unsafe' }) -TypeDefinition @'
+            # PowerShell 7+ (Core) compiles via Roslyn and takes -CompilerOptions directly;
+            # Windows PowerShell 5.1 (Desktop) uses the older CodeDom -CompilerParameters object.
+            $IsoFileTypeDef = @'
 public class ISOFile
 {
     public unsafe static void Create(string Path, object Stream, int BlockSize, int TotalBlocks)
@@ -92,56 +100,70 @@ public class ISOFile
         int bytes = 0;
         byte[] buf = new byte[BlockSize];
         var ptr = (System.IntPtr)(&bytes);
-        var o = System.IO.File.OpenWrite(Path);
         var i = Stream as System.Runtime.InteropServices.ComTypes.IStream;
+        if (i == null) return;
 
-        if (o != null) {
+        using (var o = System.IO.File.OpenWrite(Path)) {
             while (TotalBlocks-- > 0) {
                 i.Read(buf, BlockSize, ptr);
                 o.Write(buf, 0, bytes);
             }
             o.Flush();
-            o.Close();
         }
     }
 }
 '@
+            if ($PSVersionTable.PSEdition -eq 'Core') {
+                Add-Type -CompilerOptions '/unsafe' -TypeDefinition $IsoFileTypeDef
+            } else {
+                Add-Type -CompilerParameters (New-Object System.CodeDom.Compiler.CompilerParameters -Property @{ CompilerOptions = '/unsafe' }) -TypeDefinition $IsoFileTypeDef
+            }
         }
 
-        $Image = New-Object -ComObject IMAPI2FS.MsftFileSystemImage
-        $Image.VolumeName = $VolumeName
-        # ISO9660 (1) + Joliet (2): preserves long filenames like setup_server.bat,
-        # equivalent to genisoimage's `-r -J` flags.
-        $Image.FileSystemsToCreate = 3
+        $Image = $null
+        $Result = $null
+        try {
+            $Image = New-Object -ComObject IMAPI2FS.MsftFileSystemImage
+            $Image.VolumeName = $VolumeName
+            # ISO9660 (1) + Joliet (2): preserves long filenames like setup_server.bat,
+            # equivalent to genisoimage's `-r -J` flags.
+            $Image.FileSystemsToCreate = 3
 
-        Get-ChildItem -Path $SourceDir | ForEach-Object {
-            $Image.Root.AddTree($_.FullName, $false)
+            Get-ChildItem -Path $SourceDir | ForEach-Object {
+                $Image.Root.AddTree($_.FullName, $false)
+            }
+
+            if (Test-Path $IsoPath) {
+                Remove-Item $IsoPath -Force
+            }
+
+            $Result = $Image.CreateResultImage()
+            $FullIsoPath = [System.IO.Path]::GetFullPath((Join-Path (Get-Location) $IsoPath))
+            [ISOFile]::Create($FullIsoPath, $Result.ImageStream, $Result.BlockSize, $Result.TotalBlocks)
         }
-
-        if (Test-Path $IsoPath) {
-            Remove-Item $IsoPath -Force
+        finally {
+            # IMAPI2FS keeps the source files open via the COM objects above; release
+            # them (and force a GC pass) so the staging directory can be deleted next.
+            if ($null -ne $Result) {
+                [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($Result)
+            }
+            if ($null -ne $Image) {
+                [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($Image)
+            }
+            [System.GC]::Collect()
+            [System.GC]::WaitForPendingFinalizers()
         }
-
-        $Result = $Image.CreateResultImage()
-        $FullIsoPath = [System.IO.Path]::GetFullPath((Join-Path (Get-Location) $IsoPath))
-        [ISOFile]::Create($FullIsoPath, $Result.ImageStream, $Result.BlockSize, $Result.TotalBlocks)
-
-        # IMAPI2FS keeps the source files open via the COM objects above; release
-        # them (and force a GC pass) so the staging directory can be deleted next.
-        [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($Result)
-        [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($Image)
-        [System.GC]::Collect()
-        [System.GC]::WaitForPendingFinalizers()
     }
 
     Write-Host "Building ISO image..."
     New-DataIso -SourceDir $StagingDir -IsoPath "minecraft_installer.iso" -VolumeName "MC_INSTALL"
 
-    # Clean up staging directory
-    Remove-Item -Recurse -Force $StagingDir
-
     Write-Host "ISO image built successfully: minecraft_installer.iso"
 }
 finally {
+    # Clean up staging directory if it exists
+    if ($StagingDir -and (Test-Path $StagingDir)) {
+        Remove-Item -Recurse -Force $StagingDir
+    }
     Pop-Location
 }
